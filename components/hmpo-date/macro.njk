@@ -61,6 +61,7 @@
     } %}
 
     {%- set parentError = hmpoGetError(ctx, params) %}
+    {%- set parentValidationError = ctx('errors.' + params.id) %}
     {%- set args = {
         id: params.id,
         fieldset: merge(pageHeading, {
@@ -69,10 +70,14 @@
         }, params.fieldset),
         hint: hmpoGetOptions(ctx, params, "hint", true),
         errorMessages: [
-            parentError,
-            dayErrorMessage if params.showMultipleErrors == true and (not parentError or parentError.field != day.id),
-            monthErrorMessage if params.showMultipleErrors == true and (not parentError or parentError.field != month.id),
-            yearErrorMessage if params.showMultipleErrors == true and (not parentError or parentError.field != year.id)
+            parentError if parentValidationError.type == 'required',
+            parentError if params.showMultipleErrors == true and parentValidationError.type != 'required' and parentError and parentError.field == day.id,
+            dayErrorMessage if params.showMultipleErrors == true and parentValidationError.type != 'required' and (not parentError or parentError.field != day.id),
+            parentError if params.showMultipleErrors == true and parentValidationError.type != 'required' and parentError and parentError.field == month.id,
+            monthErrorMessage if params.showMultipleErrors == true and parentValidationError.type != 'required' and (not parentError or parentError.field != month.id),
+            parentError if params.showMultipleErrors == true and parentValidationError.type != 'required' and parentError and parentError.field == year.id,
+            yearErrorMessage if params.showMultipleErrors == true and parentValidationError.type != 'required' and (not parentError or parentError.field != year.id),
+            parentError if params.showMultipleErrors != true and parentValidationError.type != 'required'
         ] | filter,
         classes: params.classes,
         formGroup: params.formGroup,

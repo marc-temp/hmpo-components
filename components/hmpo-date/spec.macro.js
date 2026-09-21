@@ -82,9 +82,9 @@ describe('hmpoDate', () => {
         const $errors = $('.govuk-error-message');
 
         expect($errors).to.have.length(2);
-        expect($errors.eq(0).attr('id')).to.equal('my-input-error');
-        expect($errors.eq(1).attr('id')).to.equal('my-input-month-error');
-        expect($('.govuk-fieldset').attr('aria-describedby')).to.equal('my-input-hint my-input-error my-input-month-error');
+        expect($errors.eq(0).attr('id')).to.equal('my-input-month-error');
+        expect($errors.eq(1).attr('id')).to.equal('my-input-error');
+        expect($('.govuk-fieldset').attr('aria-describedby')).to.equal('my-input-hint my-input-month-error my-input-error');
         expect($('#my-input-month').hasClass('govuk-input--error')).to.equal(true);
         expect($('#my-input-year').hasClass('govuk-input--error')).to.equal(true);
     });
@@ -102,6 +102,39 @@ describe('hmpoDate', () => {
                 key: 'my-input-month',
                 type: 'date-month',
                 field: 'my-input-month',
+                errorGroup: 'my-input'
+            }
+        };
+
+        const $ = render({ component: 'hmpoDate', params: { id: 'my-input' }, ctx: true }, locals);
+
+        expect($('.govuk-error-message')).to.have.length(1);
+        expect($('.govuk-error-message').attr('id')).to.equal('my-input-error');
+    });
+
+    it('renders only the aggregate error for an all-empty required date', () => {
+        locals.errors = {
+            'my-input': {
+                key: 'my-input',
+                type: 'required',
+                errorGroup: 'my-input'
+            },
+            'my-input-day': {
+                key: 'my-input-day',
+                type: 'required',
+                field: 'my-input-day',
+                errorGroup: 'my-input'
+            },
+            'my-input-month': {
+                key: 'my-input-month',
+                type: 'required',
+                field: 'my-input-month',
+                errorGroup: 'my-input'
+            },
+            'my-input-year': {
+                key: 'my-input-year',
+                type: 'required',
+                field: 'my-input-year',
                 errorGroup: 'my-input'
             }
         };

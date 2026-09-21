@@ -193,6 +193,84 @@ describe('Globals', () => {
             summary[1].href.should.equal('#date-year');
         });
 
+        it('orders date-part errors by day, month, and year when they are in the error list', () => {
+            const context = sinon.stub();
+            const dayError = { key: 'date-day', type: 'date-day', field: 'date-day' };
+            const monthError = { key: 'date-month', type: 'date-month', field: 'date-month' };
+
+            context.withArgs('errorlist').returns([monthError, dayError]);
+            context.withArgs('errors').returns({
+                'date-day': dayError,
+                'date-month': monthError
+            });
+            context.withArgs('options.dateFields').returns(['date']);
+            context.withArgs('options.fields.date.showMultipleErrors').returns(true);
+            context.withArgs('translate').returns(key => Array.isArray(key) ? key[0] : key);
+
+            const summary = globals.globals.hmpoGetErrorSummary(context);
+
+            summary.should.have.length(2);
+            summary[0].href.should.equal('#date-day');
+            summary[1].href.should.equal('#date-month');
+        });
+
+        it('includes custom date validator errors in the error summary', () => {
+            const context = sinon.stub();
+            const groupError = {
+                key: 'marriageDateOfMarriage',
+                type: 'after-month',
+                field: 'marriageDateOfMarriage'
+            };
+
+            context.withArgs('errorlist').returns([groupError]);
+            context.withArgs('errors').returns({ marriageDateOfMarriage: groupError });
+            context.withArgs('options.dateFields').returns(['marriageDateOfMarriage']);
+            context.withArgs('options.fields.marriageDateOfMarriage.showMultipleErrors').returns(true);
+            context.withArgs('translate').returns(key => Array.isArray(key) ? key[0] : key);
+
+            const summary = globals.globals.hmpoGetErrorSummary(context);
+
+            summary.should.have.length(1);
+            summary[0].href.should.equal('#marriageDateOfMarriage');
+        });
+
+        it('does not duplicate a custom date validator error that targets a date part', () => {
+            const context = sinon.stub();
+            const groupError = { key: 'date', type: 'future', field: 'date-year' };
+
+            context.withArgs('errorlist').returns([groupError]);
+            context.withArgs('errors').returns({ date: groupError });
+            context.withArgs('options.dateFields').returns(['date']);
+            context.withArgs('options.fields.date.showMultipleErrors').returns(true);
+            context.withArgs('translate').returns(key => Array.isArray(key) ? key[0] : key);
+
+            const summary = globals.globals.hmpoGetErrorSummary(context);
+
+            summary.should.have.length(1);
+            summary[0].href.should.equal('#date-year');
+        });
+
+        it('keeps an all-empty required date as one error summary item', () => {
+            const context = sinon.stub();
+            const groupError = { key: 'date', type: 'required' };
+
+            context.withArgs('errorlist').returns([groupError]);
+            context.withArgs('errors').returns({
+                date: groupError,
+                'date-day': { key: 'date-day', type: 'required', field: 'date-day' },
+                'date-month': { key: 'date-month', type: 'required', field: 'date-month' },
+                'date-year': { key: 'date-year', type: 'required', field: 'date-year' }
+            });
+            context.withArgs('options.dateFields').returns(['date']);
+            context.withArgs('options.fields.date.showMultipleErrors').returns(true);
+            context.withArgs('translate').returns(key => Array.isArray(key) ? key[0] : key);
+
+            const summary = globals.globals.hmpoGetErrorSummary(context);
+
+            summary.should.have.length(1);
+            summary[0].href.should.equal('#date');
+        });
+
         it('keeps the existing grouped date error summary unless showMultipleErrors is enabled', () => {
             const context = sinon.stub();
             const groupError = { key: 'date', type: 'required-year', field: 'date-year' };
