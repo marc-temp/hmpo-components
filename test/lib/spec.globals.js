@@ -193,6 +193,43 @@ describe('Globals', () => {
             summary[1].href.should.equal('#date-year');
         });
 
+        it('includes normalized date-part errors with no child field values', () => {
+            const context = sinon.stub();
+            const groupError = {
+                key: 'applicantPassportDateOfBirth',
+                type: 'numeric-month',
+                field: 'applicantPassportDateOfBirth-month',
+                errorGroup: 'applicantPassportDateOfBirth'
+            };
+            const monthError = {
+                key: 'applicantPassportDateOfBirth-month',
+                type: 'numeric-month',
+                errorGroup: 'applicantPassportDateOfBirth'
+            };
+            const yearError = {
+                key: 'applicantPassportDateOfBirth-year',
+                type: 'numeric-year',
+                errorGroup: 'applicantPassportDateOfBirth'
+            };
+
+            context.withArgs('errorlist').returns([groupError]);
+            context.withArgs('errors').returns({
+                applicantPassportDateOfBirth: groupError,
+                'applicantPassportDateOfBirth-month': monthError,
+                'applicantPassportDateOfBirth-year': yearError
+            });
+            context.withArgs('options.dateFields').returns(['applicantPassportDateOfBirth', 'applicantPassportDateOfIssue']);
+            context.withArgs('options.fields.applicantPassportDateOfBirth.showMultipleErrors').returns(true);
+            context.withArgs('options.fields.applicantPassportDateOfIssue.showMultipleErrors').returns(true);
+            context.withArgs('translate').returns(key => Array.isArray(key) ? key[0] : key);
+
+            const summary = globals.globals.hmpoGetErrorSummary(context);
+
+            summary.should.have.length(2);
+            summary[0].href.should.equal('#applicantPassportDateOfBirth-month');
+            summary[1].href.should.equal('#applicantPassportDateOfBirth-year');
+        });
+
         it('prefers date-part errors over the parent error in the error summary', () => {
             const context = sinon.stub();
             const groupError = { key: 'date', type: 'numeric-year', field: 'date-day' };
@@ -295,6 +332,65 @@ describe('Globals', () => {
 
             summary.should.have.length(1);
             summary[0].href.should.equal('#date');
+        });
+
+        it('keeps all date-part validation failures as one error summary item', () => {
+            const context = sinon.stub();
+            const groupError = { key: 'date', type: 'date', field: 'date-day' };
+
+            context.withArgs('errorlist').returns([groupError]);
+            context.withArgs('errors').returns({
+                date: groupError,
+                'date-day': { key: 'date-day', type: 'date-day', field: 'date-day' },
+                'date-month': { key: 'date-month', type: 'date-month', field: 'date-month' },
+                'date-year': { key: 'date-year', type: 'date-year', field: 'date-year' }
+            });
+            context.withArgs('options.dateFields').returns(['date']);
+            context.withArgs('options.fields.date.showMultipleErrors').returns(true);
+            context.withArgs('translate').returns(key => Array.isArray(key) ? key[0] : key);
+
+            const summary = globals.globals.hmpoGetErrorSummary(context);
+
+            summary.should.have.length(1);
+            summary[0].href.should.equal('#date-day');
+        });
+
+        it('keeps all inexact date numeric failures as one error summary item', () => {
+            const context = sinon.stub();
+            const groupError = { key: 'date', type: 'numeric', field: 'date-month' };
+
+            context.withArgs('errorlist').returns([groupError]);
+            context.withArgs('errors').returns({ date: groupError });
+            context.withArgs('options.dateFields').returns(['date']);
+            context.withArgs('options.fields.date.showMultipleErrors').returns(true);
+            context.withArgs('translate').returns(key => Array.isArray(key) ? key[0] : key);
+
+            const summary = globals.globals.hmpoGetErrorSummary(context);
+
+            summary.should.have.length(1);
+            summary[0].href.should.equal('#date-month');
+        });
+
+        it('includes an aggregate date error when only child errors are in the error list', () => {
+            const context = sinon.stub();
+            const groupError = { key: 'date', type: 'numeric', field: 'date-month' };
+            const monthError = { key: 'date-month', type: 'numeric-month', field: 'date-month' };
+            const yearError = { key: 'date-year', type: 'numeric-year', field: 'date-year' };
+
+            context.withArgs('errorlist').returns([monthError, yearError]);
+            context.withArgs('errors').returns({
+                date: groupError,
+                'date-month': monthError,
+                'date-year': yearError
+            });
+            context.withArgs('options.dateFields').returns(['date']);
+            context.withArgs('options.fields.date.showMultipleErrors').returns(true);
+            context.withArgs('translate').returns(key => Array.isArray(key) ? key[0] : key);
+
+            const summary = globals.globals.hmpoGetErrorSummary(context);
+
+            summary.should.have.length(1);
+            summary[0].href.should.equal('#date-month');
         });
 
         it('keeps the existing grouped date error summary unless showMultipleErrors is enabled', () => {

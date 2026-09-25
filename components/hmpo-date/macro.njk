@@ -41,7 +41,7 @@
             autocomplete: month.autocomplete,
             "aria-required": hmpoGetValidatorAttribute(ctx, month, "required", null, false)
         } | filter(null)),
-        classes: "govuk-input--width-2" + (" govuk-input--error" if monthError or (params.inexact and ctx('errors.' + params.id).type == 'numeric'))
+        classes: "govuk-input--width-2" + (" govuk-input--error" if monthError)
     } %}
 
     {%- set year = hmpoGetParams(ctx, { id: params.id + "-year" }) %}
@@ -57,11 +57,12 @@
             autocomplete: year.autocomplete,
             "aria-required": hmpoGetValidatorAttribute(ctx, year, "required", null, false)
         } | filter(null)),
-        classes: "govuk-input--width-4" + (" govuk-input--error" if yearError or (params.inexact and ctx('errors.' + params.id).type == 'numeric'))
+        classes: "govuk-input--width-4" + (" govuk-input--error" if yearError)
     } %}
 
     {%- set parentError = hmpoGetError(ctx, params) %}
     {%- set parentValidationError = ctx('errors.' + params.id) %}
+    {%- set hasAggregateError = parentValidationError.type == 'required' or parentValidationError.type == 'numeric' or parentValidationError.type == 'date' %}
     {%- set args = {
         id: params.id,
         fieldset: merge(pageHeading, {
@@ -70,14 +71,14 @@
         }, params.fieldset),
         hint: hmpoGetOptions(ctx, params, "hint", true),
         errorMessages: [
-            parentError if parentValidationError.type == 'required',
-            dayErrorMessage if params.showMultipleErrors == true and parentValidationError.type != 'required' and dayErrorMessage,
-            parentError if params.showMultipleErrors == true and parentValidationError.type != 'required' and parentError and parentError.field == day.id and not dayErrorMessage,
-            monthErrorMessage if params.showMultipleErrors == true and parentValidationError.type != 'required' and monthErrorMessage,
-            parentError if params.showMultipleErrors == true and parentValidationError.type != 'required' and parentError and parentError.field == month.id and not monthErrorMessage,
-            yearErrorMessage if params.showMultipleErrors == true and parentValidationError.type != 'required' and yearErrorMessage,
-            parentError if params.showMultipleErrors == true and parentValidationError.type != 'required' and parentError and parentError.field == year.id and not yearErrorMessage,
-            parentError if params.showMultipleErrors != true and parentValidationError.type != 'required'
+            parentError if hasAggregateError,
+            dayErrorMessage if params.showMultipleErrors == true and not hasAggregateError and dayErrorMessage,
+            parentError if params.showMultipleErrors == true and not hasAggregateError and parentError and parentError.field == day.id and not dayErrorMessage,
+            monthErrorMessage if params.showMultipleErrors == true and not hasAggregateError and monthErrorMessage,
+            parentError if params.showMultipleErrors == true and not hasAggregateError and parentError and parentError.field == month.id and not monthErrorMessage,
+            yearErrorMessage if params.showMultipleErrors == true and not hasAggregateError and yearErrorMessage,
+            parentError if params.showMultipleErrors == true and not hasAggregateError and parentError and parentError.field == year.id and not yearErrorMessage,
+            parentError if params.showMultipleErrors != true and not hasAggregateError
         ] | filter,
         classes: params.classes,
         formGroup: params.formGroup,

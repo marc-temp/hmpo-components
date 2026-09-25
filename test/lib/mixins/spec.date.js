@@ -337,18 +337,6 @@ describe('Date Mixin', () => {
         });
     });
 
-    describe('date part helpers', () => {
-        it('identifies exact dates', () => {
-            instance.isExactDate({}).should.equal(true);
-            instance.isExactDate({ inexact: true }).should.equal(false);
-        });
-
-        it('returns the applicable parts for exact and inexact dates', () => {
-            instance.getDateParts({}).should.eql(['day', 'month', 'year']);
-            instance.getDateParts({ inexact: true }).should.eql(['month', 'year']);
-        });
-    });
-
     describe('validateFields', () => {
         let errors;
 
@@ -509,7 +497,25 @@ describe('Date Mixin', () => {
 
                 instance.validateDateField(req, 'date1', errors);
 
-                errors['date1'].type.should.equal('numeric-day');
+                errors['date1'].type.should.equal('numeric');
+                errors['date1'].field.should.equal('date1-day');
+                errors['date1-day'].type.should.equal('numeric-day');
+                errors['date1-month'].type.should.equal('numeric-month');
+                errors['date1-year'].type.should.equal('numeric-year');
+            });
+
+            it('should aggregate already-normalized numeric errors', () => {
+                errors = {
+                    'other': { type: 'other'},
+                    'date1': { type: 'original' },
+                    'date1-day': { errorGroup: 'date1', type: 'numeric-day'},
+                    'date1-month': { errorGroup: 'date1', type: 'numeric-month'},
+                    'date1-year': { errorGroup: 'date1', type: 'numeric-year'}
+                };
+
+                instance.validateDateField(req, 'date1', errors);
+
+                errors['date1'].type.should.equal('numeric');
                 errors['date1'].field.should.equal('date1-day');
                 errors['date1-day'].type.should.equal('numeric-day');
                 errors['date1-month'].type.should.equal('numeric-month');
@@ -532,7 +538,7 @@ describe('Date Mixin', () => {
                 errors['date1-year'].type.should.equal('numeric-year');
             });
 
-            it('should create one generic error if both inexact date parts contain letters', () => {
+            it('should create one generic error if all inexact date parts contain letters', () => {
                 options.fields['date1'].inexact = true;
                 errors = {
                     'other': { type: 'other'},
@@ -545,8 +551,8 @@ describe('Date Mixin', () => {
 
                 errors['date1'].type.should.equal('numeric');
                 errors['date1'].field.should.equal('date1-month');
-                expect(errors['date1-month']).to.be.undefined;
-                expect(errors['date1-year']).to.be.undefined;
+                errors['date1-month'].type.should.equal('numeric-month');
+                errors['date1-year'].type.should.equal('numeric-year');
             });
 
             it('should not set a date field error if an error is not numeric', () => {
@@ -619,7 +625,7 @@ describe('Date Mixin', () => {
 
                 errors['date1'].should.eql(new instance.Error(
                     'date1',
-                    { type: 'date-day', errorGroup: 'date1', field: 'date1-day' },
+                    { type: 'date', errorGroup: 'date1', field: 'date1-day' },
                     req));
                 errors['date1-day'].type.should.equal('date-day');
                 errors['date1-month'].type.should.equal('date-month');
