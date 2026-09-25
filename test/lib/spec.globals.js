@@ -193,6 +193,32 @@ describe('Globals', () => {
             summary[1].href.should.equal('#date-year');
         });
 
+        it('prefers date-part errors over the parent error in the error summary', () => {
+            const context = sinon.stub();
+            const groupError = { key: 'date', type: 'numeric-year', field: 'date-day' };
+            const dayError = { key: 'date-day', type: 'numeric-day', field: 'date-day' };
+            const monthError = { key: 'date-month', type: 'numeric-month', field: 'date-month' };
+            const yearError = { key: 'date-year', type: 'numeric-year', field: 'date-year' };
+
+            context.withArgs('errorlist').returns([groupError]);
+            context.withArgs('errors').returns({
+                date: groupError,
+                'date-day': dayError,
+                'date-month': monthError,
+                'date-year': yearError
+            });
+            context.withArgs('options.dateFields').returns(['date']);
+            context.withArgs('options.fields.date.showMultipleErrors').returns(true);
+            context.withArgs('translate').returns(key => Array.isArray(key) ? key[0] : key);
+
+            const summary = globals.globals.hmpoGetErrorSummary(context);
+
+            summary.should.have.length(3);
+            summary[0].href.should.equal('#date-day');
+            summary[1].href.should.equal('#date-month');
+            summary[2].href.should.equal('#date-year');
+        });
+
         it('orders date-part errors by day, month, and year when they are in the error list', () => {
             const context = sinon.stub();
             const dayError = { key: 'date-day', type: 'date-day', field: 'date-day' };

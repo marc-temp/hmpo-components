@@ -83,8 +83,8 @@ describe('hmpoDate', () => {
 
         expect($errors).to.have.length(2);
         expect($errors.eq(0).attr('id')).to.equal('my-input-month-error');
-        expect($errors.eq(1).attr('id')).to.equal('my-input-error');
-        expect($('.govuk-fieldset').attr('aria-describedby')).to.equal('my-input-hint my-input-month-error my-input-error');
+        expect($errors.eq(1).attr('id')).to.equal('my-input-year-error');
+        expect($('.govuk-fieldset').attr('aria-describedby')).to.equal('my-input-hint my-input-month-error my-input-year-error');
         expect($('#my-input-month').hasClass('govuk-input--error')).to.equal(true);
         expect($('#my-input-year').hasClass('govuk-input--error')).to.equal(true);
     });
@@ -143,6 +143,59 @@ describe('hmpoDate', () => {
 
         expect($('.govuk-error-message')).to.have.length(1);
         expect($('.govuk-error-message').attr('id')).to.equal('my-input-error');
+    });
+
+    it('styles both inexact date inputs for an aggregate numeric error', () => {
+        locals.errors = {
+            'my-input': {
+                key: 'my-input',
+                type: 'numeric',
+                field: 'my-input-month',
+                errorGroup: 'my-input'
+            }
+        };
+
+        const $ = render({ component: 'hmpoDate', params: { id: 'my-input', inexact: true }, ctx: true }, locals);
+
+        expect($('#my-input-month').hasClass('govuk-input--error')).to.equal(true);
+        expect($('#my-input-year').hasClass('govuk-input--error')).to.equal(true);
+    });
+
+    it('prefers child errors over a parent error for each date part', () => {
+        locals.errors = {
+            'my-input': {
+                key: 'my-input',
+                type: 'numeric-year',
+                field: 'my-input-day',
+                errorGroup: 'my-input'
+            },
+            'my-input-day': {
+                key: 'my-input-day',
+                type: 'numeric-day',
+                field: 'my-input-day',
+                errorGroup: 'my-input'
+            },
+            'my-input-month': {
+                key: 'my-input-month',
+                type: 'numeric-month',
+                field: 'my-input-month',
+                errorGroup: 'my-input'
+            },
+            'my-input-year': {
+                key: 'my-input-year',
+                type: 'numeric-year',
+                field: 'my-input-year',
+                errorGroup: 'my-input'
+            }
+        };
+
+        const $ = render({ component: 'hmpoDate', params: { id: 'my-input' }, ctx: true }, locals);
+        const $errors = $('.govuk-error-message');
+
+        expect($errors).to.have.length(3);
+        expect($errors.eq(0).attr('id')).to.equal('my-input-day-error');
+        expect($errors.eq(1).attr('id')).to.equal('my-input-month-error');
+        expect($errors.eq(2).attr('id')).to.equal('my-input-year-error');
     });
 
 });

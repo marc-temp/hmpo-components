@@ -41,7 +41,7 @@
             autocomplete: month.autocomplete,
             "aria-required": hmpoGetValidatorAttribute(ctx, month, "required", null, false)
         } | filter(null)),
-        classes: "govuk-input--width-2" + (" govuk-input--error" if monthError)
+        classes: "govuk-input--width-2" + (" govuk-input--error" if monthError or (params.inexact and ctx('errors.' + params.id).type == 'numeric'))
     } %}
 
     {%- set year = hmpoGetParams(ctx, { id: params.id + "-year" }) %}
@@ -57,7 +57,7 @@
             autocomplete: year.autocomplete,
             "aria-required": hmpoGetValidatorAttribute(ctx, year, "required", null, false)
         } | filter(null)),
-        classes: "govuk-input--width-4" + (" govuk-input--error" if yearError)
+        classes: "govuk-input--width-4" + (" govuk-input--error" if yearError or (params.inexact and ctx('errors.' + params.id).type == 'numeric'))
     } %}
 
     {%- set parentError = hmpoGetError(ctx, params) %}
@@ -71,12 +71,12 @@
         hint: hmpoGetOptions(ctx, params, "hint", true),
         errorMessages: [
             parentError if parentValidationError.type == 'required',
-            parentError if params.showMultipleErrors == true and parentValidationError.type != 'required' and parentError and parentError.field == day.id,
-            dayErrorMessage if params.showMultipleErrors == true and parentValidationError.type != 'required' and (not parentError or parentError.field != day.id),
-            parentError if params.showMultipleErrors == true and parentValidationError.type != 'required' and parentError and parentError.field == month.id,
-            monthErrorMessage if params.showMultipleErrors == true and parentValidationError.type != 'required' and (not parentError or parentError.field != month.id),
-            parentError if params.showMultipleErrors == true and parentValidationError.type != 'required' and parentError and parentError.field == year.id,
-            yearErrorMessage if params.showMultipleErrors == true and parentValidationError.type != 'required' and (not parentError or parentError.field != year.id),
+            dayErrorMessage if params.showMultipleErrors == true and parentValidationError.type != 'required' and dayErrorMessage,
+            parentError if params.showMultipleErrors == true and parentValidationError.type != 'required' and parentError and parentError.field == day.id and not dayErrorMessage,
+            monthErrorMessage if params.showMultipleErrors == true and parentValidationError.type != 'required' and monthErrorMessage,
+            parentError if params.showMultipleErrors == true and parentValidationError.type != 'required' and parentError and parentError.field == month.id and not monthErrorMessage,
+            yearErrorMessage if params.showMultipleErrors == true and parentValidationError.type != 'required' and yearErrorMessage,
+            parentError if params.showMultipleErrors == true and parentValidationError.type != 'required' and parentError and parentError.field == year.id and not yearErrorMessage,
             parentError if params.showMultipleErrors != true and parentValidationError.type != 'required'
         ] | filter,
         classes: params.classes,
